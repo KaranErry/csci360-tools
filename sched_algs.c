@@ -5,8 +5,10 @@
 #include <stdio.h>
 
 void executeOneSecond(int process, int * queue, int * arrive, int * runTime, int * respTime, int * waitTime, int * sysclock);
+void updateClockTimes(int * queue, int * runTime, int * respTime, int * waitTime, int * sysClock);
+void updateQueue(int * queue, int * arrive, int * sysClock);
 void printCalculations(int * respTime, int * waitTime);
-void contextSwitch(int conswitch);
+void contextSwitch(int conswitch, int * queue, int * runTime, int * respTime, int * waitTime, int * arrive, int * sysClock);
 int processComplete(int process, int * execute, int * runTime);
 void initializeQueue(int * queue, int * arrive);
 int pop(int * queue);
@@ -74,7 +76,7 @@ int main () {
 				while (!processComplete(currproc, execute, runTime))
 					executeOneSecond(currproc, queue, arrive, runTime, respTime, waitTime, sysClock);
 				if (!queueEmpty(queue))
-					contextSwitch(conswitch);
+					contextSwitch(conswitch, queue, runTime, respTime, waitTime, arrive, sysClock);
 				// Don't push the process back because it's complete
 			}
 			printf("\n\n");
@@ -93,10 +95,10 @@ int main () {
 					executeOneSecond(currproc, queue, arrive, runTime, respTime, waitTime, sysClock);
 					i++;
 				}
-				if (!queueEmpty(queue))
-					contextSwitch(conswitch);
 				if (!processComplete(currproc, execute, runTime))
 					push(queue, currproc);
+				if (!queueEmpty(queue))
+					contextSwitch(conswitch, queue, runTime, respTime, waitTime, arrive, sysClock);
 			}
 			printf("\n\n");
 			printCalculations(respTime, waitTime);
@@ -123,11 +125,16 @@ void executeOneSecond(int process, int * queue, int * arrive, int * runTime, int
 			a. Printing the process number to the schedule table on the screen;
 			b. Incrementing the system clock;
 			c. Incrementing the runTime of the process;
-			d. Incrementing the waitTime of the other processes.
-	2. 	Pushes newly-arrived processes onto the queue.
+			d. Incrementing other processes' Response and Wait times.
+	2. 	Updates queue with any newly-arrived processes.
 	*/
 	printf("%d ", process);
 	runTime[process-1]++;
+	updateClockTimes(queue, runTime, respTime, waitTime, sysClock);
+	updateQueue(queue, arrive, sysClock);
+}
+
+void updateClockTimes(int * queue, int * runTime, int * respTime, int * waitTime, int * sysClock) {
 	(*sysClock)++;
 	int i = 0, currElem;
 	while (i < 5 && queue[i] != 0) {
@@ -137,13 +144,17 @@ void executeOneSecond(int process, int * queue, int * arrive, int * runTime, int
 		waitTime[currElem-1]++;	// Increment wait time
 		i++;
 	}
+
+}
+
+void updateQueue(int * queue, int * arrive, int * sysClock) {
 	if (arrayContains(arrive, *sysClock))
 		push(queue, corrProcess(arrive, *sysClock));
 }
 
 void printCalculations(int * respTime, int * waitTime) {
 	printf("Calculations:\n\n");
-	printf("\t#\tResponse Time\tWait Time\n");
+	printf("\t#\tRESPONSE TIME\tWAIT TIME\n");
 	printf("\t1\t%d\t\t%d\n", respTime[0], waitTime[0]);
 	printf("\t2\t%d\t\t%d\n", respTime[1], waitTime[1]);
 	printf("\t3\t%d\t\t%d\n", respTime[2], waitTime[2]);
@@ -152,19 +163,28 @@ void printCalculations(int * respTime, int * waitTime) {
 	printf("-----------------------------------------\n");
 	int totalRespTime = (respTime[0]+respTime[1]+respTime[2]+respTime[3]+respTime[4]);
 	int totalWaitTime = (waitTime[0]+waitTime[1]+waitTime[2]+waitTime[3]+waitTime[4]);
-	printf("   Totals\t%d\t\t%d\n", totalRespTime, totalWaitTime);
+	printf("   TOTALS\t%d\t\t%d\n", totalRespTime, totalWaitTime);
 	printf("-----------------------------------------\n");
 	float avgRespTime = totalRespTime / 5.0;
 	float avgWaitTime = totalWaitTime / 5.0;
-	printf(" Averages\t%.2f\t\t%.2f\n\n", avgRespTime, avgWaitTime);
+	printf(" AVERAGES\t%.2f\t\t%.2f\n\n", avgRespTime, avgWaitTime);
 }
 
-void contextSwitch(int conswitch) {
-	// Performs a context switch by printing "X" to the
-	// schedule table on the screen.
+void contextSwitch(int conswitch, int * queue, int *runTime, int * respTime, int * waitTime, int * arrive, int * sysClock) {
+	/*
+		1. 	Performs context switch printing "X" to the
+			execution timeline on the screen;
+		2. 	Updates the system clock;
+		3. 	Updates processes' Response and Wait times;
+		4. 	Updates the queue with any newly-arrived processes.
+	*/
+
 	int i;
-	for (i = 1; i <= conswitch; i++)
+	for (i = 1; i <= conswitch; i++) {
 		printf(" X ");
+		updateClockTimes(queue, runTime, respTime, waitTime, sysClock);
+		updateQueue(queue, arrive, sysClock);
+	}
 	printf(" ");
 }
 
