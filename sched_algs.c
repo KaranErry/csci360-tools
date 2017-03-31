@@ -116,7 +116,7 @@ int main () {
 
 
 
-	return 1;
+	return 0;
 } 
 
 void executeOneSecond(int process, int * queue, int * arrive, int * runTime, int * respTime, int * waitTime, int * sysClock) {
