@@ -7,7 +7,7 @@
 void executeOneSecond(int process, int * queue, int * arrive, int * runTime, int * respTime, int * waitTime, int * sysclock);
 void updateClockTimes(int * queue, int * runTime, int * respTime, int * waitTime, int * sysClock);
 void updateQueue(int * queue, int * arrive, int * sysClock);
-void printCalculations(int * respTime, int * waitTime);
+void printCalculations(int * respTime, int * waitTime, int * arrive, int * execute);
 void contextSwitch(int conswitch, int * queue, int * runTime, int * respTime, int * waitTime, int * arrive, int * sysClock);
 int processComplete(int process, int * execute, int * runTime);
 void initializeQueue(int * queue, int * arrive);
@@ -80,7 +80,7 @@ int main () {
 				// Don't push the process back because it's complete
 			}
 			printf("\n\n");
-			printCalculations(respTime, waitTime);
+			printCalculations(respTime, waitTime, arrive, execute);
 		break;
 		case 2:
 			// RR -- strictly queue-based
@@ -101,7 +101,7 @@ int main () {
 					contextSwitch(conswitch, queue, runTime, respTime, waitTime, arrive, sysClock);
 			}
 			printf("\n\n");
-			printCalculations(respTime, waitTime);
+			printCalculations(respTime, waitTime, arrive, execute);
 		break;
 		case 3:
 			// NPSJF -- queue is filtered for conditions
@@ -152,7 +152,7 @@ void updateQueue(int * queue, int * arrive, int * sysClock) {
 		push(queue, corrProcess(arrive, *sysClock));
 }
 
-void printCalculations(int * respTime, int * waitTime) {
+void printCalculations(int * respTime, int * waitTime, int * arrive, int * execute) {
 	printf("Calculations:\n\n");
 	printf("\t#\tRESPONSE TIME\tWAIT TIME\n");
 	printf("\t1\t%d\t\t%d\n", respTime[0], waitTime[0]);
@@ -165,8 +165,9 @@ void printCalculations(int * respTime, int * waitTime) {
 	int totalWaitTime = (waitTime[0]+waitTime[1]+waitTime[2]+waitTime[3]+waitTime[4]);
 	printf("   TOTALS\t%d\t\t%d\n", totalRespTime, totalWaitTime);
 	printf("-----------------------------------------\n");
-	float avgRespTime = totalRespTime / 5.0;
-	float avgWaitTime = totalWaitTime / 5.0;
+	float totalProcesses = (((arrive[0]==0 && execute[0]==0)?0:1.0) + ((arrive[1]==0 && execute[1]==0)?0:1.0) + ((arrive[2]==0 && execute[2]==0)?0:1.0) + ((arrive[3]==0 && execute[3]==0)?0:1.0) + ((arrive[4]==0 && execute[4]==0)?0:1.0));
+	float avgRespTime = totalRespTime / totalProcesses;
+	float avgWaitTime = totalWaitTime / totalProcesses;
 	printf(" AVERAGES\t%.2f\t\t%.2f\n\n", avgRespTime, avgWaitTime);
 }
 
