@@ -5,6 +5,7 @@
 #include <stdio.h>
 
 void executeOneSecond(int process, int * queue, int * arrive, int * runTime, int * respTime, int * waitTime, int * sysclock);
+void runIdle(int * sysClock);
 void updateClockTimes(int * queue, int * runTime, int * respTime, int * waitTime, int * sysClock);
 void updateQueue(int * queue, int * arrive, int * sysClock);
 void printCalculations(int * respTime, int * waitTime, int * arrive, int * execute);
@@ -51,13 +52,24 @@ int main () {
 	scanf("%d", &arrive[4]);
 	printf("Process 5 execution time:\t");
 	scanf("%d", &execute[4]);
-
+	// Display the input:
 	printf("\n  #\tArrival\tExecution\n");
 	printf("  1\t%d\t%d\n", arrive[0], execute[0]);
 	printf("  2\t%d\t%d\n", arrive[1], execute[1]);
 	printf("  3\t%d\t%d\n", arrive[2], execute[2]);
 	printf("  4\t%d\t%d\n", arrive[3], execute[3]);
 	printf("  5\t%d\t%d\n\n", arrive[4], execute[4]);
+	// Account for blank inputs:
+	if (arrive[0] == 0 && execute[0] == 0)
+		arrive[0] = -1;
+	if (arrive[1] == 0 && execute[1] == 0)
+		arrive[1] = -1;
+	if (arrive[2] == 0 && execute[2] == 0)
+		arrive[2] = -1;
+	if (arrive[3] == 0 && execute[3] == 0)
+		arrive[3] = -1;
+	if (arrive[4] == 0 && execute[4] == 0)
+		arrive[4] = -1;
 
 	printf("Enter context switch time...  ");
 	scanf("%d", &conswitch);
@@ -65,12 +77,18 @@ int main () {
 	printf("\nChoose scheduling algorithm...\n\n 1| FCFS\n 2| RR\n 3| NPSJF\n 4| SRTN\n\n");
 	scanf("%d", &alg);
 
-	initializeQueue(queue, arrive);
+	printf("\n\nCPU Execution Timeline:\n\n");
+	
+	// Run CPU till the first process comes in:
+	updateQueue(queue, arrive, sysClock);
+	while (queueEmpty(queue)) {
+		runIdle(sysClock);
+		updateQueue(queue, arrive, sysClock);
+	}
 
 	switch (alg) {
 		case 1:
 			// FCFS -- strictly queue-based
-			printf("\n\nCPU Execution Timeline for FCFS:\n\n");
 			while (!queueEmpty(queue)) {
 				currproc = pop(queue);
 				while (!processComplete(currproc, execute, runTime))
@@ -79,15 +97,13 @@ int main () {
 					contextSwitch(conswitch, queue, runTime, respTime, waitTime, arrive, sysClock);
 				// Don't push the process back because it's complete
 			}
-			printf("\n\n");
-			printCalculations(respTime, waitTime, arrive, execute);
+			printf("  (FCFS)");
 		break;
 		case 2:
 			// RR -- strictly queue-based
 			printf("Enter RR quantum time...  ");
 			scanf("%d", &quant);
 
-			printf("\n\nCPU Execution Timeline for RR%d:\n\n", quant);
 			while (!queueEmpty(queue)) {
 				currproc = pop(queue);
 				i = 1;
@@ -100,8 +116,7 @@ int main () {
 				if (!queueEmpty(queue))
 					contextSwitch(conswitch, queue, runTime, respTime, waitTime, arrive, sysClock);
 			}
-			printf("\n\n");
-			printCalculations(respTime, waitTime, arrive, execute);
+			printf("  (RR%d)", quant);
 		break;
 		case 3:
 			// NPSJF -- queue is filtered for conditions
@@ -114,7 +129,9 @@ int main () {
 		break;
 	}
 
-
+	// Finish off:
+	printf("\n\n\twhere\tX represents a context switch\n\t\t- represents the CPU idling.\n\n");
+	printCalculations(respTime, waitTime, arrive, execute);
 
 	return 0;
 } 
@@ -132,6 +149,11 @@ void executeOneSecond(int process, int * queue, int * arrive, int * runTime, int
 	runTime[process-1]++;
 	updateClockTimes(queue, runTime, respTime, waitTime, sysClock);
 	updateQueue(queue, arrive, sysClock);
+}
+
+void runIdle(int * sysClock) {
+	printf("- ");
+	(*sysClock)++;
 }
 
 void updateClockTimes(int * queue, int * runTime, int * respTime, int * waitTime, int * sysClock) {
@@ -202,15 +224,15 @@ int getNextProcess(int conditionCode, int * arrive) {
 
 }
 
-void initializeQueue(int * queue, int * arrive) {
-	// Initializes queue with the first process to arrive
-	int i, smallest = -1;
-	for (i = 0; i < 5; i++) {
-		if (smallest == -1 || arrive[i] < smallest)
-			smallest = arrive[i];
-	}
-	push(queue, corrProcess(arrive, smallest));
-}
+// void initializeQueue(int * queue, int * arrive) {
+// 	// Initializes queue with the first process to arrive
+// 	int i, smallest = -1;
+// 	for (i = 0; i < 5; i++) {
+// 		if (smallest == -1 || arrive[i] < smallest)
+// 			smallest = arrive[i];
+// 	}
+// 	push(queue, corrProcess(arrive, smallest));
+// }
 
 int pop(int * queue) {
 	// Pop queue and return num
